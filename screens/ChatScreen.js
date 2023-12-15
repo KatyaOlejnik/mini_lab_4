@@ -4,12 +4,22 @@ import { Avatar } from 'react-native-elements';
 import { deafultPicURL } from '../utils';
 import { AntDesign, FontAwesome, Ionicons } from "@expo/vector-icons";
 import { StatusBar } from 'expo-status-bar';
-import { addDoc, collection, onSnapshot, serverTimestamp, query, orderBy } from 'firebase/firestore';
+import { deleteDoc, doc, addDoc, collection, onSnapshot, serverTimestamp, query, orderBy } from 'firebase/firestore';
 import { auth, db } from '../firebase';
+import EvilIcons from "react-native-vector-icons/FontAwesome";
 
 const ChatScreen = ( { navigation, route }) => {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
+
+                const deleteMessage = (sender) => {
+  console.log("message id: " + sender);
+  const deleted = deleteDoc(doc(db, "chats", route.params.id, "messages", sender)).then(() => {
+  console.log("message has been deleted successfully.")
+  }).catch(error => {
+  console.log(error);
+  });
+  }
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -37,7 +47,7 @@ const ChatScreen = ( { navigation, route }) => {
             <View style={{
               flexDirection: "row",
               justifyContent: "space-between",
-              width: 80, 
+              width: 80,
               marginRight: 20,
             }}>
               <TouchableOpacity>
@@ -66,7 +76,7 @@ const ChatScreen = ( { navigation, route }) => {
   };
 
   useLayoutEffect(() => {
-        const q = query(collection(db, "chats", route.params.id, "messages"), 
+        const q = query(collection(db, "chats", route.params.id, "messages"),
         orderBy("timestamp", "asc"));
         const unsubscribe = onSnapshot(q, (querySnaphots) => {
             const messages = [];
@@ -94,8 +104,8 @@ const ChatScreen = ( { navigation, route }) => {
           {messages.map(({id, data}) => (
              data.email === auth.currentUser.email ? (
                 <View key={id} style={styles.userMessage}>
-                  <Avatar 
-                  rounded 
+                  <Avatar
+                  rounded
                   source={{uri: data.photoUrl}}
                   // WEB
                   containerStyle={{
@@ -108,12 +118,27 @@ const ChatScreen = ( { navigation, route }) => {
                   right={-5}
                   size={30}/>
                   <Text style={styles.userText}>{data.message}</Text>
+                  <EvilIcons
+                                          rounded
+                                          name="trash"
+                                          // WEB
+                                          containerStyle={{
+                                              position: "absolute",
+                                               bottom: 15,
+                                               right: 15,
+                                          }}
+                                          position="absolute"
+                                          bottom={15}
+                                          right={15}
+                                          size={15}
+                                          onPress={() => deleteMessage(id)}
+                                      />
                 </View>
              ) : (
                 <View key={id} style={styles.senderMessage}>
                   <Text style={styles.senderText}>{data.message}</Text>
                   <Text style={styles.senderName}>{data.displayName}</Text>
-                  <Avatar rounded 
+                  <Avatar rounded
                   source={{uri: data.photoUrl}}
                   // WEB
                   containerStyle={{
@@ -124,13 +149,14 @@ const ChatScreen = ( { navigation, route }) => {
                   position="absolute"
                   bottom={-15}
                   left={-5}
-                  size={30} />
+                  size={30}
+                  />
                 </View>
              )
           ))}
         </ScrollView>
         <View style={styles.footer}>
-          <TextInput value={input} onChangeText={(text) => setInput(text)} 
+          <TextInput value={input} onChangeText={(text) => setInput(text)}
           placeholder='Message...' style={styles.textInput}/>
           <TouchableOpacity onPress={sendMessage} activeOpacity={0.5}>
             <Ionicons name="send" size={24} color="#017c13"/>
@@ -152,7 +178,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ECECEC',
     alignSelf: "flex-end",
     borderRadius: 20,
-    marginRight: 15, 
+    marginRight: 15,
     marginBottom: 20,
     maxWidth: "80%",
     position: "relative",
@@ -168,7 +194,7 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   senderName: {
-    left: 10, 
+    left: 10,
     paddingRight: 10,
     fontSize: 10,
     color: "white",
@@ -190,11 +216,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: "100%",
     padding: 15,
-  }, 
+  },
   textInput: {
     bottom: 0,
     height: 40,
-    flex: 1, 
+    flex: 1,
     marginRight: 15,
     borderColor: "#ECECEC",
     borderWidth: 1,
